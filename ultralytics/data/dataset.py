@@ -1,5 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+import math
 
+from copy import deepcopy
 import json
 from collections import defaultdict
 from itertools import repeat
@@ -519,3 +521,83 @@ class ClassificationDataset:
             x["msgs"] = msgs  # warnings
             save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
             return samples
+
+class PairedYOLODataset(YOLODataset):
+    """
+    Dataset class for loading paired object detection labels in YOLO format.
+    Args:
+        data (dict, optional): A dataset YAML dictionary. Defaults to None.
+        task (str): An explicit arg to point current task, Defaults to 'detect'.
+    Returns:
+        (torch.utils.data.Dataset): A PyTorch dataset object that can be used for training an object detection model.
+    """
+
+    def __init__(self, *args, gt_img_path=None, data=None, task="detect", **kwargs):
+        super().__init__(*args, data=data, task=task, **kwargs)
+        self.gt_img_path = gt_img_path   
+        self.gt_im_files = self.get_img_files(gt_img_path)
+
+        self.gt_buffer = []
+
+        self.gt_ims = [None] * self.ni
+
+    def get_image_and_label(self, index):
+        """Get and return label information from the dataset."""
+        label = deepcopy(self.labels[index])  # requires deepcopy() https://github.com/ultralytics/ultralytics/pull/1948
+        label.pop("shape", None)  # shape is for rect, remove it
+        label["img"], label["ori_shape"], label["resized_shape"] = self.load_image(index)
+        label["ratio_pad"] = (
+            label["resized_shape"][0] / label["ori_shape"][0],
+            label["resized_shape"][1] / label["ori_shape"][1],
+        )  # for evaluation
+        if self.rect:
+            label["rect_shape"] = self.batch_shapes[self.batch[index]]
+        
+        label["gt_img"] = self.load_gt_image(index)
+
+        return self.update_labels_info(label)
+    
+    def load_gt_image(self, index, rect_mode=True):
+        gt_im, f = self.gt_ims[index], self.gt_im_files[index]
+        if gt_im is None:
+            gt_im = cv2.imread(f)
+            if gt_im is None:
+                raise FileNotFoundError(f"GT Image Not Found {f}")
+       
+            h0, w0 = gt_im.shape[:2]  # orig hw
+            if rect_mode:  # resize long side to imgsz while maintaining aspect ratio
+                r = self.imgsz / max(h0, w0)  # ratio
+                if r != 1:  # if sizes are not equal
+                    w, h = (min(math.ceil(w0 * r), self.imgsz), min(math.ceil(h0 * r), self.imgsz))
+                    gt_im = cv2.resize(gt_im, (w, h), interpolation=cv2.INTER_LINEAR)
+            elif not (h0 == w0 == self.imgsz):  # resize by stretching image to square imgsz
+                gt_im = cv2.resize(gt_im, (self.imgsz, self.imgsz), interpolation=cv2.INTER_LINEAR)
+
+            # Add to buffer if training with augmentations
+            if self.augment:
+                self.gt_ims[index] = gt_im
+                self.gt_buffer.append(index)
+                if 1 < len(self.gt_buffer) >= self.max_buffer_length:  # prevent empty buffer
+                    j = self.gt_buffer.pop(0)
+                    if self.cache != "ram":
+                        self.gt_ims[j] = None
+        return gt_im
+
+    @staticmethod
+    def collate_fn(batch):
+        """Collates data samples into batches."""
+        new_batch = {}
+        keys = batch[0].keys()
+        values = list(zip(*[list(b.values()) for b in batch]))
+        for i, k in enumerate(keys):
+            value = values[i]
+            if k in {"img", "gt_img"}:
+                value = torch.stack(value, 0)
+            if k in {"masks", "keypoints", "bboxes", "cls", "segments", "obb"}:
+                value = torch.cat(value, 0)
+            new_batch[k] = value
+        new_batch["batch_idx"] = list(new_batch["batch_idx"])
+        for i in range(len(new_batch["batch_idx"])):
+            new_batch["batch_idx"][i] += i  # add target image index for build_targets()
+        new_batch["batch_idx"] = torch.cat(new_batch["batch_idx"], 0)
+        return new_batch
