@@ -23,4 +23,5 @@ __all__ = (
     "build_grounding",
     "build_dataloader",
     "load_inference_source",
+    "PairedYOLODataset"
 )
