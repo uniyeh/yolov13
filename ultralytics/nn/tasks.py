@@ -791,6 +791,9 @@ class SafeUnpickler(pickle.Unpickler):
         else:
             return SafeClass
 
+class PairedDetectionModel(DetectionModel):
+    # TODO
+
 
 def torch_safe_load(weight, safe_only=False):
     """

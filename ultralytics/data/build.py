@@ -89,7 +89,7 @@ def seed_worker(worker_id):  # noqa
     random.seed(worker_seed)
 
 
-def build_yolo_dataset(cfg, img_path, gt_img_path, batch, data, mode="train", rect=False, stride=32, multi_modal=False, dehazing = True):
+def build_yolo_dataset(cfg, img_path, batch, data, gt_img_path=None, mode="train", rect=False, stride=32, multi_modal=False, dehazing = True):
     """Build YOLO Dataset."""
     if dehazing:
         dataset = PairedYOLODataset
