@@ -9,9 +9,9 @@ import torch.nn as nn
 from torch.utils.data import dataloader, distributed
 
 from ultralytics.models.yolo.detect.train import DetectionTrainer
-from ultralytics.nn.tasks import PairedDetectionModel
+from ultralytics.nn import PairedDetectionModel
 from ultralytics.utils.torch_utils import de_parallel, torch_distributed_zero_first
-from ultralytics.data import build_dataloader, build_yolo_dataset
+from ultralytics.data import build_yolo_dataset
 from ultralytics.utils import DEFAULT_CFG, LOGGER, RANK
 
 class PairedDectectionTrainer(DetectionTrainer):
@@ -30,7 +30,7 @@ class PairedDectectionTrainer(DetectionTrainer):
     
     def preprocess_batch(self, batch):
         """Preprocesses a batch of images by scaling and converting to float."""
-        batch = super().preprocsess_batch(batch)
+        batch = super().preprocess_batch(batch)
         # Custom processing for 'gt_img' if it exists
         if "gt_img" in batch:
             batch["gt_img"] = batch["gt_img"].to(self.device, non_blocking=True).float() / 255

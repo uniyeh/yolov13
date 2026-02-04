@@ -791,10 +791,6 @@ class SafeUnpickler(pickle.Unpickler):
         else:
             return SafeClass
 
-class PairedDetectionModel(DetectionModel):
-    # TODO
-
-
 def torch_safe_load(weight, safe_only=False):
     """
     Attempts to load a PyTorch model with the torch.load() function. If a ModuleNotFoundError is raised, it catches the
