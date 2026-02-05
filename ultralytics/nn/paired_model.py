@@ -1,5 +1,5 @@
 import torch
-from ultralytics import nn
+import torch.nn as nn
 from ultralytics.nn.tasks import DetectionModel
 from ultralytics.utils.loss import v8DetectionLoss
 

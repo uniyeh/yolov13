@@ -535,11 +535,14 @@ class PairedYOLODataset(YOLODataset):
     def __init__(self, *args, gt_img_path=None, data=None, task="detect", **kwargs):
         super().__init__(*args, data=data, task=task, **kwargs)
         self.gt_img_path = gt_img_path   
-        self.gt_im_files = self.get_img_files(gt_img_path)
-
-        self.gt_buffer = []
-
-        self.gt_ims = [None] * self.ni
+        if gt_img_path:
+            self.gt_im_files = self.get_img_files(gt_img_path)
+            self.gt_ims = [None] * self.ni
+            self.gt_buffer = []
+        else:
+            self.gt_im_files = []
+            self.gt_ims = []
+            self.gt_buffer = []
 
     def get_image_and_label(self, index):
         """Get and return label information from the dataset."""
@@ -553,7 +556,8 @@ class PairedYOLODataset(YOLODataset):
         if self.rect:
             label["rect_shape"] = self.batch_shapes[self.batch[index]]
         
-        label["gt_img"] = self.load_gt_image(index)
+        if self.gt_img_path:
+            label["gt_img"] = self.load_gt_image(index)
 
         return self.update_labels_info(label)
     

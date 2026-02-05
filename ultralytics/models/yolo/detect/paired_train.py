@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch.utils.data import dataloader, distributed
 
 from ultralytics.models.yolo.detect.train import DetectionTrainer
-from ultralytics.nn import PairedDetectionModel
+from ultralytics.nn.paired_model import PairedDetectionModel
 from ultralytics.utils.torch_utils import de_parallel, torch_distributed_zero_first
 from ultralytics.data import build_yolo_dataset
 from ultralytics.utils import DEFAULT_CFG, LOGGER, RANK

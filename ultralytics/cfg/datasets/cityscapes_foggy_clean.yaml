@@ -1,0 +1,52 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Cityscapes Foggy dataset
+# Documentation: https://www.cityscapes-dataset.net/
+
+path: /home/tcyeh3118/datasets/cityscapes_dataset/foggy/foggy_yolov5_format # dataset root dir
+train: images/train # train images (relative to 'path')
+val: images/val # val images (relative to 'path')
+train_gt: /home/tcyeh3118/datasets/cityscapes_dataset/standard/standard_yolov5_format/images/train
+test: # test images (optional)
+
+# Classes
+names:
+  0: unlabeled
+  1: ego vehicle
+  2: rectification border
+  3: out of roi
+  4: static
+  5: dynamic
+  6: ground
+  7: road
+  8: sidewalk
+  9: parking
+  10: rail track
+  11: building
+  12: wall
+  13: fence
+  14: guard rail
+  15: bridge
+  16: tunnel
+  17: pole
+  18: polegroup
+  19: traffic light
+  20: traffic sign
+  21: vegetation
+  22: terrain
+  23: sky
+  24: person
+  25: rider
+  26: car
+  27: truck
+  28: bus
+  29: caravan
+  30: trailer
+  31: train
+  32: motorcycle
+  33: bicycle
+  34: license plate
+  35: unknown_35
+  36: unknown_36
+  37: unknown_37
+  38: unknown_38
+  39: unknown_39
