@@ -686,11 +686,14 @@ class Mosaic(BaseMixTransform):
             labels_patch = labels if i == 0 else labels["mix_labels"][i - 1]
             # Load image
             img = labels_patch["img"]
+            gt_img = labels_patch.get("gt_img")
             h, w = labels_patch.pop("resized_shape")
 
             # Place img in img4
             if i == 0:  # top left
                 img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+                if gt_img is not None:
+                    gt_img4 = np.full((s * 2, s* 2, img.shape[2]), 114, dtype=np.uint8) # gt_image with 4 tiles 
                 x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
                 x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
             elif i == 1:  # top right
@@ -704,6 +707,8 @@ class Mosaic(BaseMixTransform):
                 x1b, y1b, x2b, y2b = 0, 0, min(w, x2a - x1a), min(y2a - y1a, h)
 
             img4[y1a:y2a, x1a:x2a] = img[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
+            if gt_img is not None:
+                gt_img4[y1a:y2a, x1a:x2a] = gt_img[y1b:y2b, x1b:x2b] # gt_img4[ymin:ymax, xmin:xmax]
             padw = x1a - x1b
             padh = y1a - y1b
 
@@ -711,6 +716,8 @@ class Mosaic(BaseMixTransform):
             mosaic_labels.append(labels_patch)
         final_labels = self._cat_labels(mosaic_labels)
         final_labels["img"] = img4
+        if "gt_img" in labels:
+            final_labels["gt_img"] = gt_img4
         return final_labels
 
     def _mosaic9(self, labels):
@@ -1729,6 +1736,13 @@ class CopyPaste(BaseMixTransform):
         labels1["img"] = im
         labels1["cls"] = cls
         labels1["instances"] = instances
+
+        if "gt_img" in labels1:
+            gt_im = labels1["gt_img"]
+            gt_result = labels2.get("gt_img", cv2.flip(gt_im, 1))  # augment segments
+            gt_im[i] = gt_result[i]
+            labels1["gt_img"] = gt_im
+
         return labels1
 
 
@@ -2055,6 +2069,8 @@ class Format:
                 )
             labels["masks"] = masks
         labels["img"] = self._format_img(img)
+        if "gt_img" in labels:
+            labels["gt_img"] = self._format_img(labels["gt_img"])
         labels["cls"] = torch.from_numpy(cls) if nl else torch.zeros(nl)
         labels["bboxes"] = torch.from_numpy(instances.bboxes) if nl else torch.zeros((nl, 4))
         if self.return_keypoint:

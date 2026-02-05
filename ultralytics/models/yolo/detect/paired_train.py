@@ -14,7 +14,7 @@ from ultralytics.utils.torch_utils import de_parallel, torch_distributed_zero_fi
 from ultralytics.data import build_yolo_dataset
 from ultralytics.utils import DEFAULT_CFG, LOGGER, RANK
 
-class PairedDectectionTrainer(DetectionTrainer):
+class PairedDetectionTrainer(DetectionTrainer):
     def build_dataset(self, img_path, mode="train", batch=None):
         """
         Build Paired YOLO Dataset.
